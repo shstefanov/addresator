@@ -53,10 +53,10 @@ Addresator.prototype.route = function(addr_arr, data, cb_id){
 
     return;
   }
-  addr_arr[0]+=1;
-  var next_node = addr_arr[addr_arr[0]];
+  var next_node = addr_arr[addr_arr[0]+1];
   var branch = this.branches[this.prefix+next_node];
   if(branch) {
+    addr_arr[0]+=1;
     branch(addr_arr, data, cb_id);
   }
   else{
@@ -75,71 +75,4 @@ Addresator.prototype.send = function(addr_arr, data, cb){
   else this.route(addr_arr, data, cb);
 }
 
-
-
-var addr1 = new Addresator({
-  id: "addr_1",
-  onMessage: function(data, cb){
-    // console.log("addr_1 message", data);
-  },
-  onError: function(err, cb){
-    console.log("addr_1 error", err);
-  },
-
-})
-
-var addr2 = new Addresator({
-  id: "addr_2",
-  onMessage: function(data, cb){
-    // console.log("addr_2 message", data);
-  },
-  onError: function(err, cb){
-    // console.log("addr_2 error", err);
-  },
-
-})
-
-var addr3 = new Addresator({
-  id: "addr_3",
-  onMessage: function(data, cb, remote_addr){
-    // console.log("message for addr_3", data);
-    cb && cb("some cb data")
-    this.send(remote_addr, "sending manually");
-  },
-  onError: function(err, cb){
-    // console.log("addr_3 error", err);
-  },
-
-})
-
-addr1.branch(addr2.id, function(addr_arr, data, cb_id){
-  addr2.route(addr_arr, data, cb_id);
-})
-addr2.branch(addr1.id, function(addr_arr, data, cb_id){
-  addr1.route(addr_arr, data, cb_id);
-})
-
-addr2.branch(addr3.id, function(addr_arr, data, cb_id){
-  addr3.route(addr_arr, data, cb_id);
-})
-addr3.branch(addr2.id, function(addr_arr, data, cb_id){
-  addr2.route(addr_arr, data, cb_id);
-})
-
-addr3.branch(addr1.id, function(addr_arr, data, cb_id){
-  addr1.route(addr_arr, data, cb_id);
-})
-addr1.branch(addr3.id, function(addr_arr, data, cb_id){
-  addr3.route(addr_arr, data, cb_id);
-})
-
-
-
-
-
-
-
-
-addr1.send(["addr_2", "addr_3", "addr_1", "addr_2", "addr_3"], "some_data"/*, function(data){
-  console.log("addr3 callback", data)
-}*/);
+module.exports = Addresator;
