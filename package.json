@@ -1,1 +1,11 @@
-package.json
+{
+  "name": "addresator",
+  "version": "0.0.1",
+  "private": false,
+  "author": {
+    "name": "Stefan Stefanov",
+    "email": "s.h.stefanov@mail.bg"
+  },
+  "main": "./index.js",
+  "repository": "https://github.com/shstefanov/addresator.git"
+}
