@@ -23,6 +23,10 @@ Addresator.prototype.branch = function( /*string*/ name, /*function*/ fn, /*opti
   }
 }
 
+Addresator.prototype.dropBranch = function(name){
+  delete this.branches[name];
+}
+
 Addresator.prototype.sendBack = function(addr_arr, data, cb_id){
   var address_to_source = addr_arr.slice(1,addr_arr[0]).reverse();
   this.send(address_to_source, data, cb_id);
