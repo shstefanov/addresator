@@ -24,7 +24,9 @@ Addresator.prototype.branch = function( /*string*/ name, /*function*/ fn, /*opti
 }
 
 Addresator.prototype.dropBranch = function(name){
-  delete this.branches[name];
+  console.log("dropBranch!!!!!!!!!!!!!!!!!!!!!!", name);
+  delete this.branches[this.prefix+name];
+  console.log(this.branches);
 }
 
 Addresator.prototype.sendBack = function(addr_arr, data, cb_id){
