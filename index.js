@@ -24,7 +24,6 @@ Addresator.prototype.branch = function( /*string*/ name, /*function*/ fn, /*opti
 }
 
 Addresator.prototype.dropBranch = function(name){
-  console.log("dropBranch!!!!!!!!!!!!!!!!!!!!!!", name);
   delete this.branches[this.prefix+name];
   console.log(this.branches);
 }
