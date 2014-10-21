@@ -9,6 +9,7 @@ if(cluster.isMaster){
 
     // It does not need to handle messages, server will just forward
     // communication between child processes - give empty function
+    // or if you need to send messages to this instance, just handle them inside
     onMessage: function(data, cb){},
 
     // --
@@ -29,7 +30,11 @@ if(cluster.isMaster){
         server.branch(worker_id, function(addr_arr, data, cb_id){
           child.send([addr_arr, data, cb_id]);
         });
-        child.on("message", function(data){
+
+        // Give the message to route method of addresator
+        // It will be forwarded or handled
+
+        child.on("message", function(data){  
           server.route(data[0], data[1], data[2]);
         });
         counter--;
@@ -50,17 +55,31 @@ if(cluster.isMaster){
 
 else{
 
-  // 3 different processes will communicate with master process
-  process.send("message"); //sending empty message - forcing server to send back my id
+  // 3 different processes will communicate with master process 
+  // and with each other using addresator
+
+
+  // Child is loaded and initializes communication
+  process.send("message"); 
+
+  // Waiting master to send back worker id
   process.once("message", function(worker_id){
+
+    // Create the instance with it's onMessage and onError handlers
     var worker = new Addresator({
       id: worker_id,
+      // layers: true, // read comments below line 120 for this option
       onMessage: function(data, cb, remote_addr){
         console.log(worker_id+" message ", data);
 
 
         // remote_addr is address array that can be used directly to send messages back to
-        // current message source
+        // current message source\
+        
+        // Note - remote_addr is array and if you need to send many messages 
+        // using same array, you need to pass a cppy of this address because 
+        // route method does some changes on it
+        
         // this  .send(remote_addr, some_data, [function(){...}])
         // worker.send(remote_addr, some_data, [function(){...}])
 
@@ -76,9 +95,16 @@ else{
         console.log(worker_id+" error ", err);
       }
     });
+
+
+    // Adding a branch to worker's addresator instance
+    // In this callback will be defined sending the message to otherside 
+    // using custom transport, in this case, process.send
     worker.branch("server", function(addr_arr, data, cb_id){
       process.send([addr_arr, data, cb_id]);
     });
+
+    // Capturing and forwarding the message
     process.on("message", function(data){
       worker.route(data[0], data[1], data[2]);
     });
@@ -87,10 +113,31 @@ else{
 
       // I'm worker_1
       // Sending message to worker_2
-
       worker.send(["server", "worker_2"], "message from [worker_1]", function(err, response){
         console.log("in callback of "+worker.id, err, response);
       });
+
+      // Also you can create 'layer'
+      // !!! Important - by default, layers are not available
+      // Only if you instantiate addresator object with option {layers: true},
+      // the layers feature will be active, addresator's route method will search for layers
+      // and will not pass the messages to onMessage handler
+
+      // Layer is some kind of channel
+      // If you define the same layer in other node, you can send the message using:
+
+      // other_worker.layer("layerName", function(data, cb, remote_addr){ this is handler })
+      // other_worker.layers.layerName.send(addr_arr, function(){ this is callback });
+      
+      // The message will be passed here, instead of main onMessage handler of the instantion
+      
+      //worker.layer("layerName", function(data, cb, remote_addr){
+        // handle the messages here
+      //});
+
+
+      // dropLayer destroys layer with given name only for this instance
+      // worker.dropLayer("layerName") destroys the layer only for this instance
     }
 
   })
