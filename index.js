@@ -1,4 +1,29 @@
 
+function AddresatorLayers(options){
+  this.layer = layer;
+  this.onMessage = onMessage;
+  this.dropLayer = dropLayer;
+  this.layers = {};
+}
+
+function layer(name, getter){
+  this.layers[name] = {
+    root:     this,
+    // getter:   getter,
+    onMessage: getter,
+    send:     function(address, data, cb)    { this.root.send(address, {type: name, body: data}, cb); }
+  }
+}
+
+function dropLayer(name){
+  delete this.layers[name];
+}
+
+function onMessage(data, cb, remote_addr){
+  var layer = this.layers[data.type];
+  if(layer) layer.onMessage(data.body, cb, remote_addr);
+}
+
 function Addresator(options){
   this.branches  = {};
   this.callbacks = {};
@@ -9,7 +34,8 @@ function Addresator(options){
 Addresator.prototype.setOptions = function(options){
   this.prefix    = options.prefix || "_";
   this.id        = options.id;
-  this.onMessage = options.onMessage;
+  if(options.layers===true) AddresatorLayers.apply(this, arguments);
+  else{ this.onMessage = options.onMessage; }
   this.onError   = options.onError;
 }
 
@@ -25,7 +51,6 @@ Addresator.prototype.branch = function( /*string*/ name, /*function*/ fn, /*opti
 
 Addresator.prototype.dropBranch = function(name){
   delete this.branches[this.prefix+name];
-  console.log(this.branches);
 }
 
 Addresator.prototype.sendBack = function(addr_arr, data, cb_id){
@@ -41,7 +66,7 @@ Addresator.prototype.route = function(addr_arr, data, cb_id){
       return this.sendBack(addr_arr, null, cb_id?[cb_id, "Wrong address"]:["Wrong address"]);
     }
     if(Array.isArray(cb_id)){
-      if(cb_id.length===1) return this.onError && this.onError(cb_id[0]);
+      if(cb_id.length===1) return this.onError && this.onError(cb_id[0], addr_arr);
       else{
         var index = this.prefix+cb_id[0];
         var cb = this.callbacks[index];
@@ -80,4 +105,27 @@ Addresator.prototype.send = function(addr_arr, data, cb){
   else this.route(addr_arr, data, cb);
 }
 
-module.exports = Addresator;
+Addresator.prototype.hasBranch = function(name){
+  return !!this.branches[this.prefix+name];
+}
+
+
+
+
+
+
+try{
+  module.exports = Addresator;
+}
+catch(err){
+  try{
+    window.Addresator = Addresator;
+  }
+  catch(error){
+    setTimeout(function(){
+      throw error;
+    }, 0);
+    throw err;
+  }
+}
+
